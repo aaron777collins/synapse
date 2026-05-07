@@ -6,6 +6,10 @@ import { fileURLToPath } from "node:url";
 import { createRouter, json, readBody } from "./router.js";
 import { listDir, readFile, writeFile, mkDir, moveFile, deleteFile } from "./api/files.js";
 import { getMimeType } from "./utils/mime.js";
+import { createIndexer } from "./indexer/index.js";
+import { registerSearchRoutes } from "./api/search.js";
+import { registerLinkRoutes } from "./api/links.js";
+import { registerTagRoutes } from "./api/tags.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -26,6 +30,7 @@ if (!fs.existsSync(VAULT)) {
 }
 
 const router = createRouter();
+const indexer = createIndexer(VAULT);
 
 router.get("/api/config", (_req, res) => {
   json(res, { name: path.basename(VAULT), version: "0.1.0" });
@@ -52,6 +57,7 @@ router.put("/api/files/write", async (req, res) => {
   const body = await readBody(req, 10 * 1024 * 1024);
   if (!body.path || body.content === undefined) return json(res, { error: "path and content required" }, 400);
   await writeFile(VAULT, body.path, body.content);
+  if (body.path.endsWith(".md")) indexer.reindexFile(body.path, body.content);
   json(res, { ok: true });
 });
 
@@ -73,8 +79,13 @@ router.delete("/api/files/delete", async (req, res) => {
   const body = await readBody(req);
   if (!body.path) return json(res, { error: "path required" }, 400);
   await deleteFile(VAULT, body.path);
+  if (body.path.endsWith(".md")) indexer.removeFile(body.path);
   json(res, { ok: true });
 });
+
+registerSearchRoutes(router, indexer);
+registerLinkRoutes(router, indexer);
+registerTagRoutes(router, indexer);
 
 const DIST = path.join(ROOT, "dist");
 const hasDist = fs.existsSync(DIST);
@@ -130,10 +141,14 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`Synapse server: http://${HOST}:${PORT}`);
-  console.log(`Vault: ${VAULT}`);
-  if (hasDist) console.log(`Serving frontend from: ${DIST}`);
-});
+(async () => {
+  await indexer.buildAll();
+  indexer.startWatcher();
+  server.listen(PORT, HOST, () => {
+    console.log(`Synapse server: http://${HOST}:${PORT}`);
+    console.log(`Vault: ${VAULT}`);
+    if (hasDist) console.log(`Serving frontend from: ${DIST}`);
+  });
+})();
 
 export { VAULT };
