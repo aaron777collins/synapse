@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { api, type BacklinkEntry } from "$lib/services/api";
   import { activeFile, navigateToLink } from "$lib/stores/vault";
   import { backlinksOpen } from "$lib/stores/ui";
@@ -8,11 +9,11 @@
   let loading = $state(false);
   let error = $state<string | null>(null);
 
-  // Re-fetch whenever the active note changes
-  $effect(() => {
-    const file = $activeFile;
+  const unsubscribe = activeFile.subscribe((file) => {
     if (!file) {
       backlinks = [];
+      loading = false;
+      error = null;
       return;
     }
 
@@ -32,6 +33,8 @@
         loading = false;
       });
   });
+
+  onDestroy(unsubscribe);
 
   function toggle() {
     backlinksOpen.update((v) => !v);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { sidebarOpen } from "$lib/stores/ui";
+  import { sidebarOpen, sidebarWidth } from "$lib/stores/ui";
   import { createFile, createDir } from "$lib/stores/vault";
   import { debounce } from "$lib/utils/debounce";
   import ThemeToggle from "./ThemeToggle.svelte";
@@ -34,7 +34,7 @@
 
 <aside
   class="flex flex-col h-full"
-  style="width: 280px; min-width: 280px; background: var(--surface); border-right: 1px solid var(--border);"
+  style="width: {$sidebarWidth}px; min-width: {$sidebarWidth}px; background: var(--surface);"
 >
   <!-- Header -->
   <div
@@ -80,8 +80,8 @@
         type="text"
         placeholder="Search notes…"
         oninput={(e) => handleSearchInput((e.target as HTMLInputElement).value)}
-        class="w-full text-sm rounded-md pl-8 pr-3 py-1.5 outline-none transition-all search-input"
-        style="background: var(--bg); color: var(--text); border: 1px solid var(--border);"
+        class="w-full text-sm rounded-md pr-3 py-1.5 outline-none transition-all search-input"
+        style="background: var(--bg); color: var(--text); border: 1px solid var(--border); padding-left: 2.25rem;"
       />
     </div>
   </div>

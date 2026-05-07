@@ -64,26 +64,28 @@
     view = new EditorView({ state, parent: editorContainer });
   }
 
-  // Re-build the editor whenever the active file changes.
-  // Using $effect so it runs after the DOM is mounted and whenever $activeFile changes.
-  $effect(() => {
-    const file = $activeFile;
-    const content = $activeContent;
+  let unsubFile: (() => void) | null = null;
 
-    // Only act when there is both a container and an open file
-    if (!editorContainer || !file) return;
-
-    buildView(content);
-  });
-
-  // Populate the file index for wikilink autocomplete.
-  // Runs once on mount; new files created during the session are added
-  // to the allFiles store by createFile() in the vault store.
   onMount(() => {
     loadAllFiles();
+
+    let mounted = true;
+    unsubFile = activeFile.subscribe((file) => {
+      if (!mounted) return;
+      if (!editorContainer || !file) return;
+      // Use queueMicrotask to break out of any synchronous reactive batch.
+      // activeContent may not have been updated yet when activeFile fires.
+      queueMicrotask(() => {
+        if (!editorContainer || get(activeFile) !== file) return;
+        buildView(get(activeContent));
+      });
+    });
+
+    return () => { mounted = false; };
   });
 
   onDestroy(() => {
+    unsubFile?.();
     if (view) {
       view.destroy();
       view = null;

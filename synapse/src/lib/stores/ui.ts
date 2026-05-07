@@ -24,3 +24,6 @@ export const theme = createThemeStore();
 export const sidebarOpen = writable(typeof window !== "undefined" ? window.innerWidth >= 768 : true);
 export const backlinksOpen = writable(true);
 export const graphOpen = writable(false);
+
+// Sidebar width persists for the session; clamped between 200–500px in the resize handle
+export const sidebarWidth = writable(280);
