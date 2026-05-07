@@ -75,23 +75,18 @@
   <!-- Activity bar — always visible, sits at the far left like VS Code -->
   <ActivityBar />
 
-  <!-- Sidebar: fixed overlay on mobile (offset past the activity bar), in-flow on desktop -->
-  <div
-    class="
-      {$sidebarOpen ? 'flex' : 'hidden'}
-      md:flex
-      fixed md:relative
-      inset-y-0 md:inset-y-auto
-      sidebar-container
-      z-50 md:z-auto
-    "
-  >
-    <Sidebar />
-    <!-- ResizeHandle sits immediately after the sidebar, before the editor — desktop only -->
-    <div class="hidden md:flex">
-      <ResizeHandle />
+  <!-- Sidebar + resize handle: Svelte {#if} controls visibility so we
+       don't fight Tailwind responsive specificity issues -->
+  {#if $sidebarOpen}
+    <div
+      class="flex fixed md:relative inset-y-0 md:inset-y-auto sidebar-container z-50 md:z-auto"
+    >
+      <Sidebar />
+      <div class="hidden md:flex">
+        <ResizeHandle />
+      </div>
     </div>
-  </div>
+  {/if}
 
   <!-- Main content area -->
   <main class="flex-1 flex flex-col overflow-hidden" style="min-width: 0;">

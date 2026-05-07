@@ -54,7 +54,12 @@ export async function readBody(req, maxBytes = 5 * 1024 * 1024) {
       }
       chunks.push(chunk);
     });
-    req.on("end", () => resolve(JSON.parse(Buffer.concat(chunks).toString())));
+    req.on("end", () => {
+      const raw = Buffer.concat(chunks).toString();
+      // Empty body is valid for DELETE and other requests that carry no payload
+      if (!raw || !raw.trim()) return resolve({});
+      resolve(JSON.parse(raw));
+    });
     req.on("error", reject);
   });
 }

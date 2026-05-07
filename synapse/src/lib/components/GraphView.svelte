@@ -308,12 +308,24 @@
     }
   }
 
+  // ---- keyboard handling ----------------------------------------------------
+
+  // Close on Escape — mirrors the QuickSwitcher behaviour so all overlay
+  // modals have a consistent dismiss gesture.
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape" && $graphOpen) {
+      graphOpen.set(false);
+    }
+  }
+
   // ---- cleanup --------------------------------------------------------------
 
   onDestroy(() => {
     teardown();
   });
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 {#if $graphOpen}
   <div

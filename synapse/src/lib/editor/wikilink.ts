@@ -133,8 +133,9 @@ export const wikilinkStyles = EditorView.baseTheme({
 
 /**
  * Click handler for wikilinks.
- * - Desktop (viewport >= 768 px): requires Ctrl or Cmd held down.
- * - Mobile (viewport < 768 px): plain tap is enough.
+ * Plain click navigates on all viewports — matching Obsidian's behaviour.
+ * No modifier key required: wikilinks are visually distinct (underlined,
+ * accent colour) so accidental clicks while typing are unlikely.
  *
  * Walks up the DOM from the click target to find the nearest element
  * carrying the `.cm-wikilink` class, reads its `data-target`, and
@@ -143,11 +144,6 @@ export const wikilinkStyles = EditorView.baseTheme({
 export function wikilinkClickHandler(onNavigate: (target: string) => void) {
   return EditorView.domEventHandlers({
     click(event: MouseEvent) {
-      const isMobile = window.innerWidth < 768;
-      const needsModifier = !isMobile;
-
-      if (needsModifier && !event.ctrlKey && !event.metaKey) return false;
-
       const el = (event.target as HTMLElement).closest(".cm-wikilink") as HTMLElement | null;
       if (!el) return false;
 

@@ -27,3 +27,5 @@ export const graphOpen = writable(false);
 
 // Sidebar width persists for the session; clamped between 200–500px in the resize handle
 export const sidebarWidth = writable(280);
+
+export const helpOpen = writable(false);

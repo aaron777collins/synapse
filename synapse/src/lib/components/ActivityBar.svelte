@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { sidebarOpen, graphOpen, backlinksOpen } from "$lib/stores/ui";
+  import { sidebarOpen, graphOpen, backlinksOpen, helpOpen } from "$lib/stores/ui";
   import { searchActive } from "$lib/stores/search";
 
   // Which activity bar section is currently "active" (shows accent border)
-  type Panel = "explorer" | "search" | "graph" | "backlinks";
+  type Panel = "explorer" | "search" | "graph" | "backlinks" | "help";
   let activePanel = $state<Panel | null>("explorer");
 
   function activate(panel: Panel) {
@@ -45,6 +45,14 @@
       const next = !$backlinksOpen;
       backlinksOpen.set(next);
       activePanel = next ? "backlinks" : null;
+      return;
+    }
+
+    if (panel === "help") {
+      const next = !$helpOpen;
+      helpOpen.set(next);
+      // Help is a transient modal; don't keep it as an "active" sidebar section
+      activePanel = null;
     }
   }
 
@@ -123,6 +131,24 @@
       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
     </svg>
   </button>
+
+  <!-- Spacer pushes the Help button to the bottom of the bar -->
+  <div class="activity-spacer" aria-hidden="true"></div>
+
+  <!-- Help — sits below a visual divider at the bottom -->
+  <button
+    class="activity-btn"
+    onclick={() => activate("help")}
+    title="Help (Ctrl+?)"
+    aria-label="Help"
+  >
+    <!-- Circle with question mark -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  </button>
 </nav>
 
 <style>
@@ -133,10 +159,16 @@
     flex-direction: column;
     align-items: center;
     padding-top: 8px;
+    padding-bottom: 4px;
     gap: 2px;
     /* Slightly darker than --surface to create depth, matching VS Code */
     background: var(--bg);
     border-right: 1px solid var(--border);
+  }
+
+  /* Grows to fill remaining space, pushing the Help button to the bottom */
+  .activity-spacer {
+    flex: 1;
   }
 
   .activity-btn {
