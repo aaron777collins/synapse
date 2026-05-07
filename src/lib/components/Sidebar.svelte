@@ -5,13 +5,16 @@
   import ThemeToggle from "./ThemeToggle.svelte";
   import FileTree from "./FileTree.svelte";
   import TagsPanel from "./TagsPanel.svelte";
+  import SearchResults from "./SearchResults.svelte";
+  import { searchActive, searchQuery as searchQueryStore, performSearch } from "$lib/stores/search";
 
-  // Search query drives filtered display — for now stored locally;
-  // wired into search store in a future task when the search panel is added.
   let searchQuery = $state("");
 
   const handleSearchInput = debounce((value: string) => {
     searchQuery = value;
+    // Push the query into the shared store and trigger a search
+    searchQueryStore.set(value);
+    performSearch(value);
   }, 300);
 
   async function handleNewNote() {
@@ -107,9 +110,13 @@
     </button>
   </div>
 
-  <!-- File tree fills remaining height, tags panel anchors to the bottom -->
+  <!-- Search results replace the file tree while a search is active -->
   <div class="flex flex-col flex-1 overflow-hidden">
-    <FileTree />
-    <TagsPanel />
+    {#if $searchActive}
+      <SearchResults />
+    {:else}
+      <FileTree />
+      <TagsPanel />
+    {/if}
   </div>
 </aside>
