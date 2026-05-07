@@ -2,5 +2,7 @@ node_modules
 dist
 test-vault
 tests
+test-results
+playwright-report
 .git
 docs
