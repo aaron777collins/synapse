@@ -2,12 +2,14 @@
   import { onMount, onDestroy } from "svelte";
   import { EditorView, lineNumbers, highlightActiveLine } from "@codemirror/view";
   import { EditorState } from "@codemirror/state";
-  import { activeFile, activeContent, dirty, saveStatus, saveFile } from "$lib/stores/vault";
+  import { activeFile, activeContent, dirty, saveStatus, saveFile, allFiles, navigateToLink, loadAllFiles } from "$lib/stores/vault";
   import { cursorLine, cursorCol } from "$lib/stores/editor";
   import { synapseThemeDark } from "$lib/editor/theme";
   import { createMarkdownExtensions } from "$lib/editor/markdown";
   import { createKeymapExtensions } from "$lib/editor/keymaps";
+  import { wikilinkAutocomplete, wikilinkDecorations, wikilinkStyles, wikilinkClickHandler } from "$lib/editor/wikilink";
   import { debounce } from "$lib/utils/debounce";
+  import { get } from "svelte/store";
 
   let editorContainer: HTMLDivElement = $state()!;
   let view: EditorView | null = $state(null);
@@ -51,6 +53,10 @@
         synapseThemeDark,
         ...createMarkdownExtensions(),
         ...createKeymapExtensions(saveFile),
+        wikilinkAutocomplete(() => get(allFiles)),
+        wikilinkDecorations,
+        wikilinkStyles,
+        wikilinkClickHandler((target) => navigateToLink(target)),
         updateListener,
       ],
     });
@@ -68,6 +74,13 @@
     if (!editorContainer || !file) return;
 
     buildView(content);
+  });
+
+  // Populate the file index for wikilink autocomplete.
+  // Runs once on mount; new files created during the session are added
+  // to the allFiles store by createFile() in the vault store.
+  onMount(() => {
+    loadAllFiles();
   });
 
   onDestroy(() => {
