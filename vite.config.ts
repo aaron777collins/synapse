@@ -20,4 +20,8 @@ export default defineConfig({
     outDir: "dist",
     emptyOutDir: true,
   },
+  test: {
+    include: ["tests/unit/**/*.test.ts"],
+    exclude: ["tests/e2e/**"],
+  },
 });
