@@ -5,6 +5,7 @@
   import Sidebar from "./Sidebar.svelte";
   import Editor from "./Editor.svelte";
   import EditorToolbar from "./EditorToolbar.svelte";
+  import BacklinksPanel from "./BacklinksPanel.svelte";
 
   let { children }: { children?: Snippet } = $props();
 
@@ -93,8 +94,9 @@
     {/if}
 
     {#if $activeFile}
-      <!-- Editor + mobile toolbar fill the remaining content area -->
+      <!-- Editor + backlinks panel + mobile toolbar fill the remaining content area -->
       <Editor />
+      <BacklinksPanel />
       <EditorToolbar />
     {:else}
       <!-- No file selected — centered placeholder -->
