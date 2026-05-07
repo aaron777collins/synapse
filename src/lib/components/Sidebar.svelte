@@ -4,6 +4,7 @@
   import { debounce } from "$lib/utils/debounce";
   import ThemeToggle from "./ThemeToggle.svelte";
   import FileTree from "./FileTree.svelte";
+  import TagsPanel from "./TagsPanel.svelte";
 
   // Search query drives filtered display — for now stored locally;
   // wired into search store in a future task when the search panel is added.
@@ -106,6 +107,9 @@
     </button>
   </div>
 
-  <!-- File tree fills remaining height -->
-  <FileTree />
+  <!-- File tree fills remaining height, tags panel anchors to the bottom -->
+  <div class="flex flex-col flex-1 overflow-hidden">
+    <FileTree />
+    <TagsPanel />
+  </div>
 </aside>
