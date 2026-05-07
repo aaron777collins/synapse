@@ -3,6 +3,8 @@
   import { sidebarOpen } from "$lib/stores/ui";
   import { activeFile } from "$lib/stores/vault";
   import Sidebar from "./Sidebar.svelte";
+  import Editor from "./Editor.svelte";
+  import EditorToolbar from "./EditorToolbar.svelte";
 
   let { children }: { children?: Snippet } = $props();
 
@@ -91,10 +93,9 @@
     {/if}
 
     {#if $activeFile}
-      <!-- Editor slot — rendered by parent when a file is open -->
-      {#if children}
-        {@render children()}
-      {/if}
+      <!-- Editor + mobile toolbar fill the remaining content area -->
+      <Editor />
+      <EditorToolbar />
     {:else}
       <!-- No file selected — centered placeholder -->
       <div class="flex-1 flex items-center justify-center">
