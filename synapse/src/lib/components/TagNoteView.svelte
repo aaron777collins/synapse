@@ -1,24 +1,38 @@
 <script lang="ts">
-  import { tagNoteData, tagNoteLoading, tagNoteError, refreshTagNote } from "$lib/stores/tagNote";
+  import { tagNoteData, tagNoteLoading, tagNoteError, refreshTagNote, openTagNote } from "$lib/stores/tagNote";
   import { openFile } from "$lib/stores/vault";
   import { basename, stripExtension } from "$lib/utils/paths";
+
+  const TAG_RE = /(?<![a-zA-Z0-9_])#([a-zA-Z_][a-zA-Z0-9_/\-]*)/g;
 
   function handleFileClick(path: string) {
     openFile(path);
   }
 
+  function handleTagClick(e: MouseEvent) {
+    const el = (e.target as HTMLElement).closest("[data-click-tag]") as HTMLElement | null;
+    if (!el) return;
+    e.preventDefault();
+    openTagNote(el.dataset["clickTag"]!);
+  }
+
   /**
-   * Escape HTML special characters and then wrap every occurrence of `#tag`
-   * with a highlight span.  Escaping first prevents XSS from note content
-   * while still letting us inject the single trusted span element.
+   * Escape HTML, then wrap ALL #tags (not just the active one) with clickable
+   * highlight spans so every tag in a paragraph is interactive.
    */
-  function highlightTag(content: string, tag: string): string {
+  function highlightTags(content: string, activeTag: string): string {
     const escaped = content
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
-    const re = new RegExp(`(#${tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-    return escaped.replace(re, '<span class="tag-highlight">$1</span>');
+    return escaped.replace(
+      /(?<![a-zA-Z0-9_])#([a-zA-Z_][a-zA-Z0-9_/\-]*)/g,
+      (match, tag) => {
+        const isActive = tag.toLowerCase() === activeTag.toLowerCase();
+        const cls = isActive ? "tag-highlight tag-active" : "tag-highlight";
+        return `<span class="${cls}" data-click-tag="${tag}">${match}</span>`;
+      }
+    );
   }
 </script>
 
@@ -68,8 +82,10 @@
       </button>
     </div>
 
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <!-- Scrollable section list fills the remaining vertical space -->
-    <div class="sections-scroll">
+    <div class="sections-scroll" onclick={handleTagClick}>
       {#if data.sections.length === 0}
         <div class="state-message">
           <p>No paragraphs found for <strong>#{data.tag}</strong>.</p>
@@ -93,19 +109,18 @@
               </button>
 
               <div class="section-body">
-                <!-- Nearest heading gives context without cluttering the paragraphs -->
-                {#if section.heading}
-                  <div class="heading-context" aria-label="Nearest heading">
-                    <span class="heading-marker">›</span>
-                    <span class="heading-text">{section.heading}</span>
-                  </div>
-                {/if}
-
                 {#each section.paragraphs as para (para.lineNumber)}
+                  <!-- Per-paragraph heading context -->
+                  {#if para.heading}
+                    <div class="heading-context" aria-label="Nearest heading">
+                      <span class="heading-marker">›</span>
+                      <span class="heading-text">{para.heading}</span>
+                    </div>
+                  {/if}
                   <div class="paragraph-block">
                     <span class="line-number" title="Line {para.tagLineNumber}">Ln {para.tagLineNumber}</span>
-                    <!-- {@html} is safe here: content is escaped before highlight spans are injected -->
-                    <p class="paragraph-text">{@html highlightTag(para.content, data.tag)}</p>
+                    <!-- {@html} is safe: content is escaped before highlight spans are injected -->
+                    <p class="paragraph-text">{@html highlightTags(para.content, data.tag)}</p>
                   </div>
                 {/each}
               </div>
@@ -315,13 +330,23 @@
     min-width: 0;
   }
 
-  /* Tag highlight — injected via {@html}; scoped via :global since the span
-     lives inside innerHTML, not in the Svelte template tree */
+  /* Tag highlights — injected via {@html}; :global since spans live in innerHTML */
   .paragraph-text :global(.tag-highlight) {
     color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.1s ease;
+  }
+
+  .paragraph-text :global(.tag-highlight:hover) {
+    background: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  .paragraph-text :global(.tag-highlight.tag-active) {
     background: var(--accent-dim);
-    border-radius: 3px;
-    padding: 0 3px;
     font-weight: 600;
   }
 

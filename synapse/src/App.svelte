@@ -6,6 +6,7 @@
   import HelpPanel from "$lib/components/HelpPanel.svelte";
   import { registerKeybinding, initKeybindings } from "$lib/services/keybindings";
   import { sidebarOpen, backlinksOpen, graphOpen, helpOpen } from "$lib/stores/ui";
+  import { editorMode } from "$lib/stores/editor";
   import { saveFile } from "$lib/stores/vault";
 
   let quickSwitcherOpen = $state(false);
@@ -33,6 +34,7 @@
     });
     // Ctrl+? is Ctrl+Shift+/ on most keyboards; mod+shift+/ covers both
     registerKeybinding("mod+shift+/", () => helpOpen.update((v) => !v));
+    registerKeybinding("mod+e", () => editorMode.update((m) => m === "edit" ? "preview" : "edit"));
     initKeybindings();
   });
 </script>

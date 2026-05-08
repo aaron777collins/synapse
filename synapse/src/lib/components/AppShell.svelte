@@ -151,7 +151,7 @@
               { keys: 'Ctrl+S', desc: 'Save note' },
               { keys: 'Ctrl+\\', desc: 'Toggle sidebar' },
               { keys: 'Ctrl+G', desc: 'Graph view' },
-              { keys: 'Ctrl+.', desc: 'Toggle backlinks' },
+              { keys: 'Ctrl+E', desc: 'Edit / Preview' },
               { keys: 'Ctrl+Shift+F', desc: 'Search notes' },
             ] as shortcut}
               <div class="flex items-center gap-3 px-3 py-2 rounded-lg" style="background: var(--surface);">

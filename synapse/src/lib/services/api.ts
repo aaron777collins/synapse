@@ -50,11 +50,11 @@ export interface TagNoteParagraph {
   content: string;
   lineNumber: number;
   tagLineNumber: number;
+  heading: string | null;
 }
 
 export interface TagNoteSection {
   filePath: string;
-  heading: string | null;
   paragraphs: TagNoteParagraph[];
 }
 

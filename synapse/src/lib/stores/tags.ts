@@ -13,7 +13,14 @@ export async function loadTags() {
 export async function selectTag(tag: string) {
   activeTag.set(tag);
   const files = await api.tags.files(tag);
-  activeTagFiles.set(files);
+  // Deduplicate by path — getTagFiles returns one entry per occurrence
+  const seen = new Set<string>();
+  const unique = files.filter((f) => {
+    if (seen.has(f.path)) return false;
+    seen.add(f.path);
+    return true;
+  });
+  activeTagFiles.set(unique);
 }
 
 export function clearTag() {

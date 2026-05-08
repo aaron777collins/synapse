@@ -21,6 +21,7 @@
     { keys: ["Ctrl", "."],        action: "Toggle backlinks" },
     { keys: ["Ctrl", "Shift", "F"], action: "Search all notes" },
     { keys: ["Ctrl", "?"],        action: "This help guide" },
+    { keys: ["Ctrl", "E"],        action: "Toggle edit/preview" },
     { keys: ["Ctrl", "B"],        action: "Bold selection" },
     { keys: ["Ctrl", "I"],        action: "Italic selection" },
   ] as const;
@@ -71,6 +72,7 @@
             <li><strong>Wikilinks</strong>: Type <code>[[</code> to link to another note — autocomplete will suggest matching notes.</li>
             <li><strong>Tags</strong>: Use <code>#tagname</code> anywhere in your note to categorize it.</li>
             <li>The editor supports line numbers, syntax highlighting, and line wrapping.</li>
+            <li><strong>Preview mode</strong> (<kbd>Ctrl</kbd><kbd>E</kbd>): Toggle between editing and a rendered markdown preview. Tags and wikilinks are clickable in both modes.</li>
           </ul>
         </section>
 

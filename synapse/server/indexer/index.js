@@ -346,12 +346,13 @@ export function createIndexer(vaultRoot) {
   function getTagFiles(tag) {
     const result = [];
     for (const [filePath, tags] of fileTags) {
-      const match = tags.find((t) => t.tag === tag);
-      if (match) {
-        result.push({ path: filePath, lineNumber: match.lineNumber });
+      for (const t of tags) {
+        if (t.tag === tag) {
+          result.push({ path: filePath, lineNumber: t.lineNumber });
+        }
       }
     }
-    return result.sort((a, b) => a.path.localeCompare(b.path));
+    return result.sort((a, b) => a.path.localeCompare(b.path) || a.lineNumber - b.lineNumber);
   }
 
   /**
@@ -410,18 +411,14 @@ export function createIndexer(vaultRoot) {
       .map(([filePath, paraMap]) => {
         const paragraphs = [...paraMap.values()]
           .sort((a, b) => a.lineNumber - b.lineNumber)
-          .map(({ content, lineNumber, tagLineNumber }) => ({
+          .map(({ content, lineNumber, tagLineNumber, heading }) => ({
             content,
             lineNumber,
             tagLineNumber,
+            heading,
           }));
 
-        // Use the heading from the first paragraph as the section heading;
-        // all paragraphs in this section share the same file so the leading
-        // heading is the most relevant anchor for the reader.
-        const heading = [...paraMap.values()][0]?.heading ?? null;
-
-        return { filePath, heading, paragraphs };
+        return { filePath, paragraphs };
       });
 
     const paragraphCount = sections.reduce((sum, s) => sum + s.paragraphs.length, 0);
