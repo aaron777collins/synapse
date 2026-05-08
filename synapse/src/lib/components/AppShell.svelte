@@ -10,6 +10,8 @@
   import ActivityBar from "./ActivityBar.svelte";
   import ResizeHandle from "./ResizeHandle.svelte";
   import TabBar from "./TabBar.svelte";
+  import TagNoteView from "./TagNoteView.svelte";
+  import { isTagNotePath } from "$lib/utils/virtualPaths";
 
   let { children }: { children?: Snippet } = $props();
 
@@ -93,10 +95,15 @@
     {#if $activeFile}
       <!-- Tab bar sits above the editor when files are open -->
       <TabBar />
-      <!-- Editor + backlinks panel + mobile toolbar fill the remaining content area -->
-      <Editor />
-      <BacklinksPanel />
-      <EditorToolbar />
+      <!-- Tag note virtual paths render a read-only aggregation view;
+           real files get the full editor + panels experience -->
+      {#if isTagNotePath($activeFile)}
+        <TagNoteView />
+      {:else}
+        <Editor />
+        <BacklinksPanel />
+        <EditorToolbar />
+      {/if}
     {:else if $openTabs.length > 0}
       <!-- Tabs still visible even when no file is actively in the editor -->
       <TabBar />

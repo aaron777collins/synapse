@@ -1,5 +1,6 @@
 import { writable, get } from "svelte/store";
 import { api, type FileEntry } from "$lib/services/api";
+import { isTagNotePath, tagFromPath } from "$lib/utils/virtualPaths";
 
 export const activeFile = writable<string | null>(null);
 export const activeContent = writable<string>("");
@@ -20,6 +21,14 @@ export async function loadDir(dir: string) {
 }
 
 export async function openFile(path: string) {
+  // Virtual paths (e.g. "@tag/foo") are not filesystem files — delegate to
+  // the appropriate handler so callers never need to know the distinction.
+  if (isTagNotePath(path)) {
+    const { openTagNote } = await import("$lib/stores/tagNote");
+    await openTagNote(tagFromPath(path));
+    return;
+  }
+
   const { content } = await api.files.read(path);
   activeFile.set(path);
   activeContent.set(content);

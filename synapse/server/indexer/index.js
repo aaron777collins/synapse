@@ -100,6 +100,9 @@ export function createIndexer(vaultRoot) {
   /** Map<word, {path, lineNumber}[]> — rebuilt lazily on search */
   let ftIndex = null;
 
+  /** Map<tag, getTagNote result> — cleared whenever ftIndex is invalidated */
+  let tagNoteCache = new Map();
+
   /** Watcher handle (fs.FSWatcher) */
   let watcher = null;
 
@@ -108,6 +111,7 @@ export function createIndexer(vaultRoot) {
   function invalidateFtIndex() {
     // Invalidate so the next search rebuilds from current fileContents
     ftIndex = null;
+    tagNoteCache.clear();
   }
 
   function ensureFtIndex() {
@@ -146,6 +150,53 @@ export function createIndexer(vaultRoot) {
 
   function rebuildFileIndex() {
     fileIndex = buildFileIndex([...fileContents.keys()]);
+  }
+
+  /**
+   * Extract the paragraph containing a specific line.
+   * A paragraph is a contiguous block of non-blank lines.
+   *
+   * @param {string[]} lines   All lines of the file (0-based array)
+   * @param {number}   lineNum 1-based line number to anchor on
+   * @returns {{ startLine: number, endLine: number, content: string }}
+   */
+  function extractParagraph(lines, lineNum) {
+    const anchor = lineNum - 1; // convert to 0-based index
+
+    // Walk backward to find the first line of the paragraph
+    let start = anchor;
+    while (start > 0 && !/^\s*$/.test(lines[start - 1])) {
+      start--;
+    }
+
+    // Walk forward to find the last line of the paragraph
+    let end = anchor;
+    while (end < lines.length - 1 && !/^\s*$/.test(lines[end + 1])) {
+      end++;
+    }
+
+    return {
+      startLine: start + 1, // back to 1-based
+      endLine: end + 1,     // back to 1-based
+      content: lines.slice(start, end + 1).join("\n"),
+    };
+  }
+
+  /**
+   * Find the nearest heading that appears before a given line.
+   *
+   * @param {string[]} lines      All lines of the file (0-based array)
+   * @param {number}   beforeLine 1-based line number (exclusive — heading must be strictly before it)
+   * @returns {string | null} Trimmed heading text, or null if none found
+   */
+  function findNearestHeading(lines, beforeLine) {
+    // Start scanning at the line immediately before beforeLine (0-based: beforeLine - 2)
+    for (let i = beforeLine - 2; i >= 0; i--) {
+      if (/^#{1,6}\s/.test(lines[i])) {
+        return lines[i].trim();
+      }
+    }
+    return null;
   }
 
   // ── Public API ───────────────────────────────────────────────────────────
@@ -304,6 +355,118 @@ export function createIndexer(vaultRoot) {
   }
 
   /**
+   * Return contextual paragraphs for every occurrence of a tag across the vault.
+   * Results are grouped by file and sorted alphabetically by file path; paragraphs
+   * within each file are sorted by start line.
+   *
+   * @param {string} tag
+   * @returns {{
+   *   tag: string,
+   *   fileCount: number,
+   *   paragraphCount: number,
+   *   sections: {
+   *     filePath: string,
+   *     heading: string | null,
+   *     paragraphs: { content: string, lineNumber: number, tagLineNumber: number }[]
+   *   }[]
+   * }}
+   */
+  function getTagNote(tag) {
+    if (tagNoteCache.has(tag)) return tagNoteCache.get(tag);
+
+    // { path, lineNumber }[] — one entry per occurrence of the tag in any file
+    const occurrences = getTagFiles(tag);
+
+    // Group paragraphs by file path, deduplicating by paragraph startLine
+    // so that a tag appearing twice inside the same paragraph isn't double-counted.
+    const byFile = new Map(); // filePath → Map<startLine, paragraph object>
+
+    for (const { path: filePath, lineNumber } of occurrences) {
+      const content = fileContents.get(filePath);
+      if (content === undefined) continue;
+
+      const lines = content.split("\n");
+      const para = extractParagraph(lines, lineNumber);
+      const heading = findNearestHeading(lines, para.startLine);
+
+      if (!byFile.has(filePath)) {
+        byFile.set(filePath, new Map());
+      }
+      const paraMap = byFile.get(filePath);
+
+      if (!paraMap.has(para.startLine)) {
+        paraMap.set(para.startLine, {
+          content: para.content,
+          lineNumber: para.startLine,
+          tagLineNumber: lineNumber,
+          heading,
+        });
+      }
+    }
+
+    // Build sections sorted by file path; paragraphs within each file sorted by line
+    const sections = [...byFile.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([filePath, paraMap]) => {
+        const paragraphs = [...paraMap.values()]
+          .sort((a, b) => a.lineNumber - b.lineNumber)
+          .map(({ content, lineNumber, tagLineNumber }) => ({
+            content,
+            lineNumber,
+            tagLineNumber,
+          }));
+
+        // Use the heading from the first paragraph as the section heading;
+        // all paragraphs in this section share the same file so the leading
+        // heading is the most relevant anchor for the reader.
+        const heading = [...paraMap.values()][0]?.heading ?? null;
+
+        return { filePath, heading, paragraphs };
+      });
+
+    const paragraphCount = sections.reduce((sum, s) => sum + s.paragraphs.length, 0);
+
+    const result = {
+      tag,
+      fileCount: sections.length,
+      paragraphCount,
+      sections,
+    };
+
+    tagNoteCache.set(tag, result);
+    return result;
+  }
+
+  /**
+   * Return files that carry all (mode='and') or any (mode='or') of the given tags.
+   *
+   * @param {string[]} tags
+   * @param {'and' | 'or'} mode
+   * @returns {{ path: string, matchedTags: string[] }[]}
+   */
+  function searchByTags(tags, mode) {
+    const querySet = new Set(tags);
+    const results = [];
+
+    for (const [filePath, tagEntries] of fileTags) {
+      const fileTagNames = new Set(tagEntries.map((t) => t.tag));
+
+      const matchedTags = tags.filter((t) => fileTagNames.has(t));
+
+      const matches =
+        mode === "and"
+          ? matchedTags.length === querySet.size
+          : matchedTags.length > 0;
+
+      if (matches) {
+        results.push({ path: filePath, matchedTags });
+      }
+    }
+
+    return results.sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  /**
    * Full-text search across all indexed files.
    *
    * @param {string} query
@@ -376,6 +539,8 @@ export function createIndexer(vaultRoot) {
     getGraph,
     getTags,
     getTagFiles,
+    getTagNote,
+    searchByTags,
     search,
     getFileIndex,
     startWatcher,

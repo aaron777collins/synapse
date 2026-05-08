@@ -2,6 +2,7 @@
   import type { TagEntry } from "$lib/services/api";
   import { activeTag } from "$lib/stores/tags";
   import { selectTag, clearTag } from "$lib/stores/tags";
+  import { openTagNote } from "$lib/stores/tagNote";
 
   let { tags }: { tags: TagEntry[] } = $props();
 
@@ -21,10 +22,13 @@
 
   function handleClick(tag: string) {
     if ($activeTag === tag) {
-      // Clicking the active tag deselects it
+      // Clicking the active tag deselects it — no tag note to open
       clearTag();
     } else {
       selectTag(tag);
+      // Opening the tag note view is a side-effect of selecting a tag;
+      // the virtual tab appears alongside the file list in the sidebar.
+      openTagNote(tag);
     }
   }
 </script>

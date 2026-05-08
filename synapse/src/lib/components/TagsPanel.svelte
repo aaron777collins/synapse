@@ -3,6 +3,7 @@
   import { allTags, activeTag, activeTagFiles, loadTags, clearTag } from "$lib/stores/tags";
   import { openFile } from "$lib/stores/vault";
   import { basename, stripExtension } from "$lib/utils/paths";
+  import { openTagNote } from "$lib/stores/tagNote";
   import TagCloud from "./TagCloud.svelte";
 
   // Collapsed/expanded state is local — no shared store needed for the panel header
@@ -71,20 +72,37 @@
       {#if $activeTag}
         <div class="border-t" style="border-color: var(--border);">
           <!-- Active tag header: py-2 and stronger accent color make it feel intentional -->
-          <div class="flex items-center justify-between px-4 py-2">
-            <span class="text-xs font-semibold flex items-center gap-1" style="color: var(--accent);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <div class="flex items-center justify-between px-4 py-2 gap-2">
+            <span class="text-xs font-semibold flex items-center gap-1 min-w-0 truncate" style="color: var(--accent);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0;">
                 <line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>
               </svg>
-              {$activeTag}
+              <span class="truncate">{$activeTag}</span>
             </span>
-            <button
-              onclick={clearTag}
-              class="text-xs px-2 py-0.5 rounded transition-colors hover:bg-[var(--surface-hover)]"
-              style="color: var(--text-muted);"
-            >
-              Clear
-            </button>
+            <div class="flex items-center gap-1 shrink-0">
+              <!-- Opens the full aggregated tag note in the main editor area -->
+              <button
+                onclick={() => openTagNote($activeTag!)}
+                class="text-xs px-2 py-0.5 rounded transition-colors hover:bg-[var(--accent-dim)] flex items-center gap-1"
+                style="color: var(--accent); border: 1px solid var(--accent-dim);"
+                title="Open aggregated tag note"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="11" x2="12" y2="17"/>
+                  <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+                View
+              </button>
+              <button
+                onclick={clearTag}
+                class="text-xs px-2 py-0.5 rounded transition-colors hover:bg-[var(--surface-hover)]"
+                style="color: var(--text-muted);"
+              >
+                Clear
+              </button>
+            </div>
           </div>
 
           {#if $activeTagFiles.length === 0}

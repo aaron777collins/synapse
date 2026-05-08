@@ -46,6 +46,30 @@ export interface TagFile {
   lineNumber: number;
 }
 
+export interface TagNoteParagraph {
+  content: string;
+  lineNumber: number;
+  tagLineNumber: number;
+}
+
+export interface TagNoteSection {
+  filePath: string;
+  heading: string | null;
+  paragraphs: TagNoteParagraph[];
+}
+
+export interface TagNoteData {
+  tag: string;
+  fileCount: number;
+  paragraphCount: number;
+  sections: TagNoteSection[];
+}
+
+export interface TagSearchResult {
+  path: string;
+  matchedTags: string[];
+}
+
 export const api = {
   config: () => request<{ name: string; version: string }>("/api/config"),
   health: () => request<{ status: string }>("/api/health"),
@@ -86,5 +110,8 @@ export const api = {
   tags: {
     list: () => request<TagEntry[]>("/api/tags"),
     files: (tag: string) => request<TagFile[]>(`/api/tags/files?tag=${encodeURIComponent(tag)}`),
+    note: (tag: string) => request<TagNoteData>(`/api/tags/note?tag=${encodeURIComponent(tag)}`),
+    search: (tags: string[], mode: "and" | "or" = "and") =>
+      request<TagSearchResult[]>(`/api/tags/search?tags=${encodeURIComponent(tags.join(","))}&mode=${mode}`),
   },
 };
