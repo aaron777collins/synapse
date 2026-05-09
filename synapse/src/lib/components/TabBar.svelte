@@ -1,60 +1,63 @@
 <script lang="ts">
-  import { openTabs, activeTab, closeTab } from "$lib/stores/tabs";
-  import { activeFile, openFile } from "$lib/stores/vault";
   import { basename, stripExtension } from "$lib/utils/paths";
   import { isTagNotePath, tagFromPath } from "$lib/utils/virtualPaths";
+  import {
+    panes,
+    openFileInPane,
+    closeTabInPane,
+    type PaneState,
+  } from "$lib/stores/panes";
+
+  let { paneId = "pane-1" }: { paneId?: string } = $props();
+
+  let pane = $derived($panes.find((p: PaneState) => p.id === paneId) ?? $panes[0]);
 
   function handleTabClick(path: string) {
-    // Don't re-open if already active — avoids a redundant API call
-    if ($activeTab === path) return;
-    openFile(path);
+    if (pane.file === path) return;
+    openFileInPane(paneId, path);
   }
 
   function handleClose(e: MouseEvent, path: string) {
-    // Stop the click from also firing the tab-select handler
     e.stopPropagation();
-    closeTab(path, (next) => {
-      if (next) {
-        openFile(next);
-      } else {
-        activeFile.set(null);
-      }
-    });
+    closeTabInPane(paneId, path);
   }
 
   function handleMiddleClick(e: MouseEvent, path: string) {
-    // Middle-click to close, matching VS Code muscle memory
     if (e.button !== 1) return;
     e.preventDefault();
-    closeTab(path, (next) => {
-      if (next) {
-        openFile(next);
-      } else {
-        activeFile.set(null);
-      }
-    });
+    closeTabInPane(paneId, path);
+  }
+
+  function handleDragStart(e: DragEvent, path: string) {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.setData(
+      "application/synapse-tab",
+      JSON.stringify({ sourcePaneId: paneId, filePath: path })
+    );
+    e.dataTransfer.effectAllowed = "move";
   }
 </script>
 
-{#if $openTabs.length > 0}
+{#if pane.tabs.length > 0}
   <div class="tab-bar" role="tablist" aria-label="Open files">
-    {#each $openTabs as path (path)}
+    {#each pane.tabs as path (path)}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       {@const isTagTab = isTagNotePath(path)}
       <div
         class="tab"
-        class:active={$activeTab === path}
+        class:active={pane.file === path}
         class:tag-tab={isTagTab}
         role="tab"
-        aria-selected={$activeTab === path}
+        aria-selected={pane.file === path}
         title={path}
+        draggable="true"
         onclick={() => handleTabClick(path)}
         onmousedown={(e) => handleMiddleClick(e, path)}
+        ondragstart={(e) => handleDragStart(e, path)}
         tabindex="0"
         onkeydown={(e) => e.key === "Enter" && handleTabClick(path)}
       >
         {#if isTagTab}
-          <!-- Tag note tabs get a subtle hash prefix to distinguish them from file tabs -->
           <span class="tab-tag-prefix" aria-hidden="true">#</span>
           <span class="tab-name tab-name--tag">{tagFromPath(path)}</span>
         {:else}
@@ -86,7 +89,6 @@
     flex-shrink: 0;
     background: var(--bg);
     border-bottom: 1px solid var(--border);
-    /* Hide the scrollbar track but keep scrolling functional */
     scrollbar-width: none;
   }
 
@@ -110,7 +112,6 @@
     border-right: 1px solid var(--border);
     transition: color 0.1s ease, background 0.1s ease;
     user-select: none;
-    /* Bottom accent bar for the active tab */
   }
 
   .tab::after {
@@ -164,7 +165,6 @@
     padding: 0;
   }
 
-  /* Show close button on hover or when tab is active */
   .tab:hover .tab-close,
   .tab.active .tab-close {
     opacity: 0.6;
@@ -175,14 +175,11 @@
     background: var(--surface-hover);
   }
 
-  /* Tag note tabs: accent-colored hash prefix + slightly different name tint
-     so they are visually distinct from regular file tabs at a glance */
   .tab-tag-prefix {
     font-size: 11px;
     font-weight: 700;
     color: var(--accent);
     flex-shrink: 0;
-    /* Shift up slightly so the hash aligns optically with the tab name */
     line-height: 1;
     margin-top: -1px;
   }

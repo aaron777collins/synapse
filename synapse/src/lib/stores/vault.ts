@@ -21,19 +21,9 @@ export async function loadDir(dir: string) {
 }
 
 export async function openFile(path: string) {
-  // Virtual paths (e.g. "@tag/foo") are not filesystem files — delegate to
-  // the appropriate handler so callers never need to know the distinction.
-  if (isTagNotePath(path)) {
-    const { openTagNote } = await import("$lib/stores/tagNote");
-    await openTagNote(tagFromPath(path));
-    return;
-  }
-
-  const { content } = await api.files.read(path);
-  activeFile.set(path);
-  activeContent.set(content);
-  dirty.set(false);
-  saveStatus.set("saved");
+  // Route through the panes store so the focused pane gets updated
+  const { openFileInPane, focusedPaneId } = await import("$lib/stores/panes");
+  await openFileInPane(get(focusedPaneId), path);
   recentFiles.update((recent) => {
     const filtered = recent.filter((f) => f !== path);
     return [path, ...filtered].slice(0, 20);

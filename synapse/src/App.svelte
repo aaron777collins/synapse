@@ -7,8 +7,8 @@
   import { registerKeybinding, initKeybindings } from "$lib/services/keybindings";
   import { initFromUrl } from "$lib/services/history";
   import { sidebarOpen, backlinksOpen, graphOpen, helpOpen } from "$lib/stores/ui";
-  import { editorMode } from "$lib/stores/editor";
-  import { saveFile } from "$lib/stores/vault";
+  import { focusedPaneId, setPaneMode, savePaneFile, focusedPane } from "$lib/stores/panes";
+  import { get } from "svelte/store";
 
   let quickSwitcherOpen = $state(false);
   // Local state mirrors the helpOpen store so HelpPanel's bindable prop can write back here,
@@ -23,7 +23,7 @@
   onMount(() => {
     initFromUrl();
     registerKeybinding("mod+k", () => (quickSwitcherOpen = !quickSwitcherOpen));
-    registerKeybinding("mod+s", () => saveFile());
+    registerKeybinding("mod+s", () => savePaneFile(get(focusedPaneId)));
     registerKeybinding("mod+\\", () => sidebarOpen.update((v) => !v));
     registerKeybinding("mod+.", () => backlinksOpen.update((v) => !v));
     registerKeybinding("mod+g", () => graphOpen.update((v) => !v));
@@ -36,7 +36,10 @@
     });
     // Ctrl+? is Ctrl+Shift+/ on most keyboards; mod+shift+/ covers both
     registerKeybinding("mod+shift+/", () => helpOpen.update((v) => !v));
-    registerKeybinding("mod+e", () => editorMode.update((m) => m === "edit" ? "preview" : "edit"));
+    registerKeybinding("mod+e", () => {
+      const pane = get(focusedPane);
+      setPaneMode(pane.id, pane.mode === "edit" ? "preview" : "edit");
+    });
     initKeybindings();
   });
 </script>

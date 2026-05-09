@@ -2,8 +2,7 @@
   import { marked } from "marked";
   import hljs from "highlight.js/lib/common";
   import "highlight.js/styles/github-dark.min.css";
-  import { activeContent } from "$lib/stores/vault";
-  import { openFile, navigateToLink } from "$lib/stores/vault";
+  import { navigateToLink } from "$lib/stores/vault";
   import { openTagNote } from "$lib/stores/tagNote";
 
   const TAG_RE = /(?<![a-zA-Z0-9_])#([a-zA-Z_][a-zA-Z0-9_/\-]*)/g;
@@ -51,7 +50,9 @@
     breaks: true,
   });
 
-  let html = $derived(marked.parse($activeContent) as string);
+  let { content = "" }: { content?: string } = $props();
+
+  let html = $derived(marked.parse(content) as string);
 
   function handleClick(e: MouseEvent) {
     const target = e.target as HTMLElement;
