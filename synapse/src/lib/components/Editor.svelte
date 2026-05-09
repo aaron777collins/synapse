@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { EditorView, lineNumbers, highlightActiveLine } from "@codemirror/view";
-  import { EditorState } from "@codemirror/state";
+  import { EditorState, Compartment } from "@codemirror/state";
   import { allFiles, navigateToLink, loadAllFiles } from "$lib/stores/vault";
   import { synapseThemeDark } from "$lib/editor/theme";
   import MarkdownPreview from "./MarkdownPreview.svelte";
-  import { createMarkdownExtensions } from "$lib/editor/markdown";
+  import { createMarkdownExtensions, loadCodeLanguages } from "$lib/editor/markdown";
   import { createKeymapExtensions } from "$lib/editor/keymaps";
   import { wikilinkAutocomplete, wikilinkDecorations, wikilinkStyles, wikilinkClickHandler } from "$lib/editor/wikilink";
   import { tagDecorations, tagStyles, tagClickHandler } from "$lib/editor/tags";
@@ -27,6 +27,7 @@
 
   let editorContainer: HTMLDivElement = $state()!;
   let view: EditorView | null = $state(null);
+  const mdCompartment = new Compartment();
 
   const debouncedSave = debounce(() => {
     savePaneFile(paneId);
@@ -59,7 +60,7 @@
         highlightActiveLine(),
         EditorView.lineWrapping,
         synapseThemeDark,
-        ...createMarkdownExtensions(),
+        mdCompartment.of(createMarkdownExtensions()),
         ...createKeymapExtensions(() => savePaneFile(paneId)),
         wikilinkAutocomplete(() => get(allFiles)),
         wikilinkDecorations,
@@ -73,6 +74,12 @@
     });
 
     view = new EditorView({ state, parent: editorContainer });
+
+    loadCodeLanguages().then((langs) => {
+      view?.dispatch({
+        effects: mdCompartment.reconfigure(createMarkdownExtensions(langs)),
+      });
+    });
   }
 
   let lastFile: string | null = null;

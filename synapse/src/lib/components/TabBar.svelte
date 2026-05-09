@@ -5,12 +5,16 @@
     panes,
     openFileInPane,
     closeTabInPane,
+    reorderTabs,
     type PaneState,
   } from "$lib/stores/panes";
 
   let { paneId = "pane-1" }: { paneId?: string } = $props();
 
   let pane = $derived($panes.find((p: PaneState) => p.id === paneId) ?? $panes[0]);
+
+  let draggingPath: string | null = $state(null);
+  let dropTargetIndex: number | null = $state(null);
 
   function handleTabClick(path: string) {
     if (pane.file === path) return;
@@ -35,18 +39,50 @@
       JSON.stringify({ sourcePaneId: paneId, filePath: path })
     );
     e.dataTransfer.effectAllowed = "move";
+    draggingPath = path;
+  }
+
+  function handleDragEnd() {
+    draggingPath = null;
+    dropTargetIndex = null;
+  }
+
+  function handleTabDragOver(e: DragEvent, index: number) {
+    if (!e.dataTransfer?.types.includes("application/synapse-tab")) return;
+    if (!draggingPath) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    dropTargetIndex = index;
+  }
+
+  function handleTabDrop(e: DragEvent, index: number) {
+    if (!draggingPath) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const fromIndex = pane.tabs.indexOf(draggingPath);
+    if (fromIndex !== -1 && fromIndex !== index) {
+      reorderTabs(paneId, fromIndex, index);
+    }
+    dropTargetIndex = null;
+  }
+
+  function handleBarDragLeave() {
+    dropTargetIndex = null;
   }
 </script>
 
 {#if pane.tabs.length > 0}
-  <div class="tab-bar" role="tablist" aria-label="Open files">
-    {#each pane.tabs as path (path)}
+  <div class="tab-bar" role="tablist" aria-label="Open files" ondragleave={handleBarDragLeave}>
+    {#each pane.tabs as path, i (path)}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       {@const isTagTab = isTagNotePath(path)}
       <div
         class="tab"
         class:active={pane.file === path}
         class:tag-tab={isTagTab}
+        class:dragging={draggingPath === path}
+        class:drop-before={dropTargetIndex === i && draggingPath !== path}
         role="tab"
         aria-selected={pane.file === path}
         title={path}
@@ -54,6 +90,9 @@
         onclick={() => handleTabClick(path)}
         onmousedown={(e) => handleMiddleClick(e, path)}
         ondragstart={(e) => handleDragStart(e, path)}
+        ondragend={handleDragEnd}
+        ondragover={(e) => handleTabDragOver(e, i)}
+        ondrop={(e) => handleTabDrop(e, i)}
         tabindex="0"
         onkeydown={(e) => e.key === "Enter" && handleTabClick(path)}
       >
@@ -105,13 +144,25 @@
     max-width: 200px;
     height: 100%;
     flex-shrink: 0;
-    cursor: pointer;
+    cursor: grab;
     position: relative;
     color: var(--text-muted);
     font-size: 12px;
     border-right: 1px solid var(--border);
-    transition: color 0.1s ease, background 0.1s ease;
+    transition: color 0.1s ease, background 0.1s ease, opacity 0.15s ease;
     user-select: none;
+  }
+
+  .tab:active {
+    cursor: grabbing;
+  }
+
+  .tab.dragging {
+    opacity: 0.4;
+  }
+
+  .tab.drop-before {
+    border-left: 2px solid var(--accent);
   }
 
   .tab::after {

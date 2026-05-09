@@ -3,12 +3,42 @@
   import { loadDir, childrenByDir } from "$lib/stores/vault";
   import FileTreeNode from "./FileTreeNode.svelte";
 
+  let rootDragOver = $state(false);
+
   onMount(() => {
     loadDir("");
   });
+
+  function handleRootDragOver(e: DragEvent) {
+    if (!e.dataTransfer?.types.includes("application/synapse-tree")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    rootDragOver = true;
+  }
+
+  function handleRootDragLeave() {
+    rootDragOver = false;
+  }
+
+  async function handleRootDrop(e: DragEvent) {
+    rootDragOver = false;
+    const data = e.dataTransfer?.getData("application/synapse-tree");
+    if (!data) return;
+    e.preventDefault();
+    const { path, name } = JSON.parse(data);
+    if (!path.includes("/")) return;
+    const { moveFileAction } = await import("$lib/stores/vault");
+    await moveFileAction(path, name);
+  }
 </script>
 
-<div class="flex-1 overflow-y-auto py-1" style="color: var(--text);">
+<div
+  class="flex-1 overflow-y-auto py-1"
+  class:root-drag-over={rootDragOver}
+  style="color: var(--text);"
+  ondragover={handleRootDragOver}
+  ondragleave={handleRootDragLeave}
+  ondrop={handleRootDrop}>
   {#if $childrenByDir.has("") && $childrenByDir.get("")!.length > 0}
     {#each $childrenByDir.get("")! as entry (entry.path)}
       <FileTreeNode {entry} depth={0} />
@@ -38,3 +68,11 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .root-drag-over {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+</style>

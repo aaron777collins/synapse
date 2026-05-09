@@ -19,6 +19,21 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "codemirror-core": [
+            "@codemirror/state",
+            "@codemirror/view",
+            "@codemirror/language",
+            "@codemirror/commands",
+            "@codemirror/lang-markdown",
+            "@lezer/highlight",
+            "@lezer/markdown",
+          ],
+        },
+      },
+    },
   },
   test: {
     include: ["tests/unit/**/*.test.ts"],

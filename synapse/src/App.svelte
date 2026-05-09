@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
   import AppShell from "$lib/components/AppShell.svelte";
   import QuickSwitcher from "$lib/components/QuickSwitcher.svelte";
-  import GraphView from "$lib/components/GraphView.svelte";
   import HelpPanel from "$lib/components/HelpPanel.svelte";
   import { registerKeybinding, initKeybindings } from "$lib/services/keybindings";
   import { initFromUrl } from "$lib/services/history";
@@ -46,5 +45,10 @@
 
 <AppShell />
 <QuickSwitcher bind:open={quickSwitcherOpen} />
-<GraphView />
+{#if $graphOpen}
+  {#await import("$lib/components/GraphView.svelte") then mod}
+    {@const GraphView = mod.default}
+    <GraphView />
+  {/await}
+{/if}
 <HelpPanel bind:open={helpPanelOpen} />

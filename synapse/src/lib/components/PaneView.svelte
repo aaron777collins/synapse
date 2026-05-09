@@ -34,6 +34,7 @@
   function handleDragOver(e: DragEvent) {
     if (!e.dataTransfer?.types.includes("application/synapse-tab")) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const midX = rect.left + rect.width / 2;
     dragOver = e.clientX < midX ? "left" : "right";
@@ -135,9 +136,22 @@
     width: 50%;
     z-index: 50;
     pointer-events: none;
-    border: 2px dashed var(--accent);
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-    transition: opacity 0.1s;
+    border: 3px dashed var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    transition: opacity 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .drop-zone::after {
+    content: "";
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    opacity: 0.6;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%237c6af7' stroke-width='2'%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cline x1='12' y1='3' x2='12' y2='21'/%3E%3C/svg%3E") center/20px no-repeat;
   }
 
   .drop-left {

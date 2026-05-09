@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { marked } from "marked";
-  import hljs from "highlight.js/lib/common";
-  import "highlight.js/styles/github-dark.min.css";
   import { navigateToLink } from "$lib/stores/vault";
   import { openTagNote } from "$lib/stores/tagNote";
+
+  let hljsRef: any = null;
+  let hljsReady = $state(false);
 
   const TAG_RE = /(?<![a-zA-Z0-9_])#([a-zA-Z_][a-zA-Z0-9_/\-]*)/g;
   const WIKILINK_RE = /\[\[([^\]]+)\]\]/g;
@@ -32,8 +34,8 @@
 
   renderer.code = function ({ text, lang }: { text: string; lang?: string; escaped?: boolean }) {
     let highlighted: string;
-    if (lang && hljs.getLanguage(lang)) {
-      highlighted = hljs.highlight(text, { language: lang }).value;
+    if (lang && hljsRef?.getLanguage(lang)) {
+      highlighted = hljsRef.highlight(text, { language: lang }).value;
     } else {
       highlighted = text
         .replace(/&/g, "&amp;")
@@ -52,7 +54,19 @@
 
   let { content = "" }: { content?: string } = $props();
 
-  let html = $derived(marked.parse(content) as string);
+  let html = $derived.by(() => {
+    void hljsReady;
+    return marked.parse(content) as string;
+  });
+
+  onMount(async () => {
+    const [mod] = await Promise.all([
+      import("highlight.js/lib/common"),
+      import("highlight.js/styles/github-dark.min.css"),
+    ]);
+    hljsRef = mod.default;
+    hljsReady = true;
+  });
 
   function handleClick(e: MouseEvent) {
     const target = e.target as HTMLElement;

@@ -76,6 +76,24 @@ export async function navigateToLink(target: string) {
   else { const path = `${target}.md`; await createFile(path, `# ${target}\n\n`); }
 }
 
+export async function moveFileAction(from: string, to: string) {
+  await api.files.move(from, to);
+  const fromDir = from.includes("/") ? from.substring(0, from.lastIndexOf("/")) : "";
+  const toDir = to.includes("/") ? to.substring(0, to.lastIndexOf("/")) : "";
+  await loadDir(fromDir);
+  if (fromDir !== toDir) await loadDir(toDir);
+  allFiles.update((files) =>
+    files.map((f) => {
+      if (f === from) return to;
+      if (f.startsWith(from + "/")) return to + f.substring(from.length);
+      return f;
+    })
+  );
+  const { renameTabInAllPanes } = await import("$lib/stores/panes");
+  renameTabInAllPanes(from, to);
+  if (get(activeFile) === from) activeFile.set(to);
+}
+
 export async function loadAllFiles(dir = ""): Promise<void> {
   const entries = await api.files.list(dir);
   childrenByDir.update((m) => { m.set(dir, entries); return new Map(m); });

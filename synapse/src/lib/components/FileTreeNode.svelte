@@ -1,21 +1,21 @@
 <script lang="ts">
+  import { slide } from "svelte/transition";
   import FileTreeNode from "./FileTreeNode.svelte";
   import ContextMenu from "./ContextMenu.svelte";
-  import { activeFile, loadDir, openFile, expandedDirs, childrenByDir, deleteFileAction } from "$lib/stores/vault";
+  import { activeFile, loadDir, openFile, expandedDirs, childrenByDir, deleteFileAction, createFile, createDir } from "$lib/stores/vault";
   import { api } from "$lib/services/api";
   import { downloadFile, downloadFolder } from "$lib/services/download";
   import type { FileEntry } from "$lib/services/api";
 
   let { entry, depth = 0 }: { entry: FileEntry; depth?: number } = $props();
 
-  // Derived values reference props inside $derived so Svelte 5 tracks them reactively
   const isDir = $derived(entry.type === "dir");
   const paddingLeft = $derived(12 + depth * 16);
 
-  // Context menu state
   let contextMenuOpen = $state(false);
   let contextMenuX = $state(0);
   let contextMenuY = $state(0);
+  let isDragOver = $state(false);
 
   // Expand a directory on first click by loading its contents lazily
   async function toggleDir() {
@@ -69,7 +69,62 @@
     await deleteFileAction(entry.path);
   }
 
-  // File context menu shows Open, Download, Rename, Delete
+  async function handleNewNoteInDir() {
+    const name = prompt("New note name:");
+    if (!name) return;
+    const fileName = name.endsWith(".md") ? name : `${name}.md`;
+    const path = entry.path ? `${entry.path}/${fileName}` : fileName;
+    await createFile(path, `# ${name.replace(/\.md$/, "")}\n\n`);
+    expandedDirs.update((s) => { s.add(entry.path); return new Set(s); });
+  }
+
+  async function handleNewFolderInDir() {
+    const name = prompt("New folder name:");
+    if (!name) return;
+    const path = entry.path ? `${entry.path}/${name}` : name;
+    await createDir(path);
+    expandedDirs.update((s) => { s.add(entry.path); return new Set(s); });
+  }
+
+  function handleTreeDragStart(e: DragEvent) {
+    if (!e.dataTransfer) return;
+    e.dataTransfer.setData(
+      "application/synapse-tree",
+      JSON.stringify({ path: entry.path, type: entry.type, name: entry.name })
+    );
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleTreeDragOver(e: DragEvent) {
+    if (!isDir) return;
+    if (!e.dataTransfer?.types.includes("application/synapse-tree")) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    isDragOver = true;
+  }
+
+  function handleTreeDragLeave() {
+    isDragOver = false;
+  }
+
+  async function handleTreeDrop(e: DragEvent) {
+    isDragOver = false;
+    if (!isDir) return;
+    const data = e.dataTransfer?.getData("application/synapse-tree");
+    if (!data) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const { path: sourcePath, name: sourceName } = JSON.parse(data);
+    if (sourcePath === entry.path) return;
+    if (entry.path.startsWith(sourcePath + "/")) return;
+    const destPath = entry.path ? `${entry.path}/${sourceName}` : sourceName;
+    if (sourcePath === destPath) return;
+    const { moveFileAction } = await import("$lib/stores/vault");
+    await moveFileAction(sourcePath, destPath);
+    expandedDirs.update((s) => { s.add(entry.path); return new Set(s); });
+  }
+
   const fileMenuItems = [
     { label: "Open", icon: "open", action: () => openFile(entry.path) },
     { label: "Download", icon: "download", action: () => downloadFile(entry.path) },
@@ -77,8 +132,9 @@
     { label: "Delete", icon: "delete", danger: true, action: handleDelete },
   ];
 
-  // Directory context menu shows Download ZIP, Rename, Delete
   const dirMenuItems = [
+    { label: "New Note", icon: "new-file", action: handleNewNoteInDir },
+    { label: "New Folder", icon: "new-folder", action: handleNewFolderInDir },
     { label: "Download ZIP", icon: "download", action: () => downloadFolder(entry.path) },
     { label: "Rename", icon: "rename", action: handleRename },
     { label: "Delete", icon: "delete", danger: true, action: handleDelete },
@@ -86,11 +142,16 @@
 </script>
 
 {#if isDir}
-  <!-- Directory row — mx-1 keeps hover highlight away from sidebar edges -->
   <button
     onclick={toggleDir}
     oncontextmenu={openContextMenu}
+    draggable="true"
+    ondragstart={handleTreeDragStart}
+    ondragover={handleTreeDragOver}
+    ondragleave={handleTreeDragLeave}
+    ondrop={handleTreeDrop}
     class="flex items-center gap-1.5 mx-1 text-left text-sm transition-colors hover:bg-[var(--surface-hover)] rounded-md cursor-pointer"
+    class:drag-target={isDragOver}
     style="min-height: 32px; width: calc(100% - 8px); padding-left: {paddingLeft - 4}px; padding-right: 8px; color: var(--text);"
     aria-expanded={$expandedDirs.has(entry.path)}
   >
@@ -127,17 +188,19 @@
     <span class="truncate">{entry.name}</span>
   </button>
 
-  <!-- Render children recursively when expanded -->
   {#if $expandedDirs.has(entry.path) && $childrenByDir.has(entry.path)}
-    {#each $childrenByDir.get(entry.path)! as child (child.path)}
-      <FileTreeNode entry={child} depth={depth + 1} />
-    {/each}
+    <div transition:slide={{ duration: 150 }}>
+      {#each $childrenByDir.get(entry.path)! as child (child.path)}
+        <FileTreeNode entry={child} depth={depth + 1} />
+      {/each}
+    </div>
   {/if}
 {:else}
-  <!-- File row — left border accent makes the active file more prominent -->
   <button
     onclick={handleFileClick}
     oncontextmenu={openContextMenu}
+    draggable="true"
+    ondragstart={handleTreeDragStart}
     class="flex items-center gap-1.5 mx-1 text-left text-sm transition-colors hover:bg-[var(--surface-hover)] rounded-md cursor-pointer"
     style="min-height: 32px; width: calc(100% - 8px); padding-left: {$activeFile === entry.path ? paddingLeft - 6 : paddingLeft - 4}px; padding-right: 8px;
            color: {$activeFile === entry.path ? 'var(--accent)' : 'var(--text)'};
@@ -172,3 +235,11 @@
   items={isDir ? dirMenuItems : fileMenuItems}
   bind:open={contextMenuOpen}
 />
+
+<style>
+  .drag-target {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+    background: color-mix(in srgb, var(--accent) 15%, transparent) !important;
+  }
+</style>

@@ -1,6 +1,5 @@
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { languages } from "@codemirror/language-data";
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, syntaxHighlighting, type LanguageDescription } from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 
 export const markdownHighlighting = syntaxHighlighting(
@@ -20,9 +19,18 @@ export const markdownHighlighting = syntaxHighlighting(
   ])
 );
 
-export function createMarkdownExtensions() {
+let cachedLanguages: LanguageDescription[] | null = null;
+
+export async function loadCodeLanguages(): Promise<LanguageDescription[]> {
+  if (cachedLanguages) return cachedLanguages;
+  const { languages } = await import("@codemirror/language-data");
+  cachedLanguages = languages;
+  return languages;
+}
+
+export function createMarkdownExtensions(codeLanguages?: LanguageDescription[]) {
   return [
-    markdown({ base: markdownLanguage, codeLanguages: languages }),
+    markdown({ base: markdownLanguage, ...(codeLanguages ? { codeLanguages } : {}) }),
     markdownHighlighting,
   ];
 }

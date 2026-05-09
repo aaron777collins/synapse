@@ -171,6 +171,25 @@ export function closePane(paneId: string) {
   splitRatio.set(0.5);
 }
 
+export function reorderTabs(paneId: string, fromIndex: number, toIndex: number) {
+  updatePane(paneId, (p) => {
+    const tabs = [...p.tabs];
+    const [moved] = tabs.splice(fromIndex, 1);
+    tabs.splice(toIndex, 0, moved);
+    return { ...p, tabs };
+  });
+}
+
+export function renameTabInAllPanes(oldPath: string, newPath: string) {
+  panes.update((all) =>
+    all.map((p) => ({
+      ...p,
+      file: p.file === oldPath ? newPath : p.file,
+      tabs: p.tabs.map((t) => (t === oldPath ? newPath : t)),
+    }))
+  );
+}
+
 export function moveTabToOtherPane(sourcePaneId: string, filePath: string) {
   const current = get(panes);
   if (current.length < 2) return;
