@@ -3,6 +3,7 @@
   import ContextMenu from "./ContextMenu.svelte";
   import { activeFile, loadDir, openFile, expandedDirs, childrenByDir, deleteFileAction } from "$lib/stores/vault";
   import { api } from "$lib/services/api";
+  import { downloadFile, downloadFolder } from "$lib/services/download";
   import type { FileEntry } from "$lib/services/api";
 
   let { entry, depth = 0 }: { entry: FileEntry; depth?: number } = $props();
@@ -68,15 +69,17 @@
     await deleteFileAction(entry.path);
   }
 
-  // File context menu shows Open, Rename, Delete
+  // File context menu shows Open, Download, Rename, Delete
   const fileMenuItems = [
     { label: "Open", icon: "open", action: () => openFile(entry.path) },
+    { label: "Download", icon: "download", action: () => downloadFile(entry.path) },
     { label: "Rename", icon: "rename", action: handleRename },
     { label: "Delete", icon: "delete", danger: true, action: handleDelete },
   ];
 
-  // Directory context menu shows Rename, Delete
+  // Directory context menu shows Download ZIP, Rename, Delete
   const dirMenuItems = [
+    { label: "Download ZIP", icon: "download", action: () => downloadFolder(entry.path) },
     { label: "Rename", icon: "rename", action: handleRename },
     { label: "Delete", icon: "delete", danger: true, action: handleDelete },
   ];

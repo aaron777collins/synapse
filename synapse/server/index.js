@@ -10,6 +10,7 @@ import { createIndexer } from "./indexer/index.js";
 import { registerSearchRoutes } from "./api/search.js";
 import { registerLinkRoutes } from "./api/links.js";
 import { registerTagRoutes } from "./api/tags.js";
+import { registerDownloadRoutes } from "./api/download.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -86,6 +87,7 @@ router.delete("/api/files/delete", async (req, res) => {
 registerSearchRoutes(router, indexer);
 registerLinkRoutes(router, indexer);
 registerTagRoutes(router, indexer);
+registerDownloadRoutes(router, VAULT);
 
 const DIST = path.join(ROOT, "dist");
 const hasDist = fs.existsSync(DIST);
