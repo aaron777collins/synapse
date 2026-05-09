@@ -1,5 +1,7 @@
 <script lang="ts">
   import { marked } from "marked";
+  import hljs from "highlight.js/lib/common";
+  import "highlight.js/styles/github-dark.min.css";
   import { activeContent } from "$lib/stores/vault";
   import { openFile, navigateToLink } from "$lib/stores/vault";
   import { openTagNote } from "$lib/stores/tagNote";
@@ -27,6 +29,20 @@
     });
 
     return text;
+  };
+
+  renderer.code = function ({ text, lang }: { text: string; lang?: string; escaped?: boolean }) {
+    let highlighted: string;
+    if (lang && hljs.getLanguage(lang)) {
+      highlighted = hljs.highlight(text, { language: lang }).value;
+    } else {
+      highlighted = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+    const cls = lang ? `language-${lang} hljs` : "hljs";
+    return `<pre><code class="${cls}">${highlighted}</code></pre>\n`;
   };
 
   marked.setOptions({
@@ -218,6 +234,11 @@
     padding: 0;
     font-size: 0.85em;
     color: var(--text);
+  }
+
+  .preview-content :global(pre code.hljs) {
+    background: none;
+    padding: 0;
   }
 
   /* ── Tables ───────────────────────────────────────── */

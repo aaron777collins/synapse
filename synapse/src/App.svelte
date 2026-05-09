@@ -5,6 +5,7 @@
   import GraphView from "$lib/components/GraphView.svelte";
   import HelpPanel from "$lib/components/HelpPanel.svelte";
   import { registerKeybinding, initKeybindings } from "$lib/services/keybindings";
+  import { initFromUrl } from "$lib/services/history";
   import { sidebarOpen, backlinksOpen, graphOpen, helpOpen } from "$lib/stores/ui";
   import { editorMode } from "$lib/stores/editor";
   import { saveFile } from "$lib/stores/vault";
@@ -20,6 +21,7 @@
   $effect(() => { helpOpen.set(helpPanelOpen); });
 
   onMount(() => {
+    initFromUrl();
     registerKeybinding("mod+k", () => (quickSwitcherOpen = !quickSwitcherOpen));
     registerKeybinding("mod+s", () => saveFile());
     registerKeybinding("mod+\\", () => sidebarOpen.update((v) => !v));
