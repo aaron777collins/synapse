@@ -10,5 +10,6 @@ WORKDIR /app
 COPY --from=build /app/server ./server
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json .
+COPY --from=build /app/node_modules ./node_modules
 EXPOSE 5173
 CMD ["node", "server/index.js", "--vault", "/vault", "--host", "0.0.0.0"]
