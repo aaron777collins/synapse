@@ -14,7 +14,8 @@
   }
 
   const shortcuts = [
-    { keys: ["Ctrl", "K"],        action: "Quick Switcher" },
+    { keys: ["Ctrl", "K"],        action: "Search notes & content" },
+    { keys: ["Ctrl", "Shift", "K"], action: "Quick Switcher (files only)" },
     { keys: ["Ctrl", "S"],        action: "Save current note" },
     { keys: ["Ctrl", "\\"],       action: "Toggle sidebar" },
     { keys: ["Ctrl", "G"],        action: "Graph view" },

@@ -147,7 +147,7 @@
 <div class="editor-shell flex flex-col h-full overflow-hidden">
   <div
     class="flex items-center py-2 shrink-0 border-b text-sm gap-3"
-    style="background: var(--surface); border-color: var(--border); color: var(--text-muted); padding-left: 16px; padding-right: 24px;"
+    style="background: var(--surface); border-color: var(--border); color: var(--text-muted); padding-left: 16px; padding-right: 16px;"
   >
     <span
       class="truncate font-mono text-xs pl-2"
