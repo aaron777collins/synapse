@@ -102,7 +102,7 @@
         {#each $panes as pane, i (pane.id)}
           <div
             class="flex flex-col overflow-hidden"
-            style="flex: {i === 0 ? $splitRatio : 1 - $splitRatio}; min-width: 0;"
+            style="flex: {$panes.length === 1 ? 1 : (i === 0 ? $splitRatio : 1 - $splitRatio)}; min-width: 0;"
           >
             <PaneView paneId={pane.id} />
           </div>

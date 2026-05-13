@@ -89,6 +89,8 @@ export async function savePaneFile(paneId: string) {
   try {
     await api.files.write(pane.file, pane.content);
     updatePane(paneId, (p) => ({ ...p, dirty: false, saveStatus: "saved" }));
+    const { loadTags } = await import("$lib/stores/tags");
+    loadTags();
   } catch {
     updatePane(paneId, (p) => ({ ...p, saveStatus: "error" }));
   }

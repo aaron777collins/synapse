@@ -33,7 +33,7 @@
       Tags
       {#if $allTags.length > 0}
         <span
-          class="text-xs rounded-full px-1.5 py-0.5 font-semibold"
+          class="text-xs rounded-full px-2.5 py-0.5 font-semibold"
           style="background: var(--accent-dim); color: var(--accent);"
         >
           {$allTags.length}

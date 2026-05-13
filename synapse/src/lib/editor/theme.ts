@@ -11,7 +11,7 @@ export const synapseThemeDark = EditorView.theme(
     ".cm-content": {
       caretColor: "var(--accent)",
       lineHeight: "1.6",
-      padding: "16px 0",
+      padding: "16px 16px 16px 0",
     },
     ".cm-cursor": {
       borderLeftColor: "var(--accent)",
