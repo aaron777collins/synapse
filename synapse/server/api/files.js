@@ -11,13 +11,23 @@ export async function listDir(vaultRoot, dirPath) {
 
   for (const entry of entries) {
     if (IGNORED.has(entry.name) || entry.name.startsWith(".")) continue;
+    const fullPath = path.join(resolved, entry.name);
     const relativePath = normalizePath(
-      path.relative(vaultRoot, path.join(resolved, entry.name))
+      path.relative(vaultRoot, fullPath)
     );
+    let type = entry.isDirectory() ? "dir" : "file";
+    if (entry.isSymbolicLink()) {
+      try {
+        const stat = await fs.stat(fullPath);
+        type = stat.isDirectory() ? "dir" : "file";
+      } catch {
+        continue;
+      }
+    }
     results.push({
       name: entry.name,
       path: relativePath,
-      type: entry.isDirectory() ? "dir" : "file",
+      type,
     });
   }
 

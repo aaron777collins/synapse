@@ -61,7 +61,11 @@ export async function deleteFileAction(path: string) {
   await api.files.delete(path);
   const dir = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
   await loadDir(dir);
-  if (get(activeFile) === path) { activeFile.set(null); activeContent.set(""); }
+  allFiles.update((files) => files.filter((f) => f !== path));
+  const { panes: panesStore, closeTabInPane } = await import("$lib/stores/panes");
+  for (const pane of get(panesStore)) {
+    if (pane.tabs.includes(path)) closeTabInPane(pane.id, path);
+  }
 }
 
 export async function navigateToLink(target: string) {

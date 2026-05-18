@@ -38,9 +38,18 @@ async function collectMarkdownFiles(dir) {
   for (const entry of entries) {
     if (entry.name.startsWith(".") || IGNORED_DIRS.has(entry.name)) continue;
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
+    let isDir = entry.isDirectory();
+    let isFile = entry.isFile();
+    if (entry.isSymbolicLink()) {
+      try {
+        const stat = await fsp.stat(full);
+        isDir = stat.isDirectory();
+        isFile = stat.isFile();
+      } catch { continue; }
+    }
+    if (isDir) {
       results.push(...(await collectMarkdownFiles(full)));
-    } else if (entry.isFile() && entry.name.endsWith(".md")) {
+    } else if (isFile && entry.name.endsWith(".md")) {
       results.push(full);
     }
   }
