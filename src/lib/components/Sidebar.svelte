@@ -1,6 +1,7 @@
 <script lang="ts">
   import { sidebarOpen } from "$lib/stores/ui";
-  import { createFile, createDir } from "$lib/stores/vault";
+  import { createFile, createDir, openFile, loadDir } from "$lib/stores/vault";
+  import { api } from "$lib/services/api";
   import { debounce } from "$lib/utils/debounce";
   import ThemeToggle from "./ThemeToggle.svelte";
   import FileTree from "./FileTree.svelte";
@@ -29,6 +30,16 @@
     const name = prompt("Folder name:");
     if (!name?.trim()) return;
     await createDir(name.trim());
+  }
+
+  async function handleNewCanvas() {
+    const name = prompt("Canvas name:");
+    if (!name?.trim()) return;
+    const path = name.endsWith(".canvas") ? name.trim() : `${name.trim()}.canvas`;
+    await api.files.write(path, JSON.stringify({ nodes: [], edges: [] }, null, 2));
+    const dir = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+    await loadDir(dir);
+    await openFile(path);
   }
 </script>
 
@@ -86,27 +97,39 @@
     </div>
   </div>
 
-  <!-- New Note / New Folder actions -->
-  <div class="flex gap-2 px-3 py-2" style="border-bottom: 1px solid var(--border);">
+  <!-- New Note / New Canvas / New Folder actions -->
+  <div class="flex gap-1.5 px-3 py-2" style="border-bottom: 1px solid var(--border);">
     <button
       onclick={handleNewNote}
-      class="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 px-2 rounded-md transition-colors"
+      class="flex-1 flex items-center justify-center gap-1 text-xs font-medium py-1.5 px-1 rounded-md transition-colors"
       style="background: var(--accent); color: #fff;"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
       </svg>
-      New Note
+      Note
+    </button>
+    <button
+      onclick={handleNewCanvas}
+      class="flex-1 flex items-center justify-center gap-1 text-xs font-medium py-1.5 px-1 rounded-md transition-colors"
+      style="background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="2"/>
+        <circle cx="8" cy="8" r="1.5"/><circle cx="16" cy="16" r="1.5"/>
+        <path d="M10 8h4a2 2 0 0 1 2 2v4"/>
+      </svg>
+      Canvas
     </button>
     <button
       onclick={handleNewFolder}
-      class="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 px-2 rounded-md transition-colors"
+      class="flex-1 flex items-center justify-center gap-1 text-xs font-medium py-1.5 px-1 rounded-md transition-colors"
       style="background: transparent; color: var(--accent); border: 1px solid var(--accent);"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
       </svg>
-      New Folder
+      Folder
     </button>
   </div>
 

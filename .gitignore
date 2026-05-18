@@ -5,5 +5,8 @@ dist/
 *.log
 .DS_Store
 test-vault/
+synapse/
+vault/test/
+docs/superpowers/
 playwright-report/
 test-results/

@@ -6,6 +6,7 @@
   import Editor from "./Editor.svelte";
   import EditorToolbar from "./EditorToolbar.svelte";
   import BacklinksPanel from "./BacklinksPanel.svelte";
+  import CanvasView from "./canvas/CanvasView.svelte";
 
   let { children }: { children?: Snippet } = $props();
 
@@ -93,8 +94,9 @@
       </button>
     {/if}
 
-    {#if $activeFile}
-      <!-- Editor + backlinks panel + mobile toolbar fill the remaining content area -->
+    {#if $activeFile?.endsWith('.canvas')}
+      <CanvasView />
+    {:else if $activeFile}
       <Editor />
       <BacklinksPanel />
       <EditorToolbar />

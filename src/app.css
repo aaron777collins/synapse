@@ -13,6 +13,17 @@
   --accent: #8b5cf6;
   --accent-hover: #a78bfa;
   --accent-dim: #7c3aed33;
+
+  --canvas-red: #fb464c;
+  --canvas-orange: #e9973f;
+  --canvas-yellow: #e0de71;
+  --canvas-green: #44cf6e;
+  --canvas-cyan: #53dfdd;
+  --canvas-purple: #a882ff;
+  --canvas-dot: #1e293b;
+  --canvas-bg: #0b1120;
+  --canvas-card-bg: #0f172a;
+  --canvas-card-border: #334155;
 }
 
 :root.light {
@@ -25,6 +36,17 @@
   --accent: #7c3aed;
   --accent-hover: #6d28d9;
   --accent-dim: #8b5cf633;
+
+  --canvas-red: #e93147;
+  --canvas-orange: #ec7500;
+  --canvas-yellow: #e0ac00;
+  --canvas-green: #08b94e;
+  --canvas-cyan: #00bfbc;
+  --canvas-purple: #7852ee;
+  --canvas-dot: #cbd5e1;
+  --canvas-bg: #f1f5f9;
+  --canvas-card-bg: #ffffff;
+  --canvas-card-border: #e2e8f0;
 }
 
 * {

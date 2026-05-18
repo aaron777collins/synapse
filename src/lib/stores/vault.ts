@@ -1,5 +1,6 @@
 import { writable, get } from "svelte/store";
 import { api, type FileEntry } from "$lib/services/api";
+import { loadCanvas } from "$lib/stores/canvas";
 
 export const activeFile = writable<string | null>(null);
 export const activeContent = writable<string>("");
@@ -20,11 +21,19 @@ export async function loadDir(dir: string) {
 }
 
 export async function openFile(path: string) {
-  const { content } = await api.files.read(path);
-  activeFile.set(path);
-  activeContent.set(content);
-  dirty.set(false);
-  saveStatus.set("saved");
+  if (path.endsWith('.canvas')) {
+    activeFile.set(path);
+    activeContent.set('');
+    dirty.set(false);
+    saveStatus.set('saved');
+    await loadCanvas(path);
+  } else {
+    const { content } = await api.files.read(path);
+    activeFile.set(path);
+    activeContent.set(content);
+    dirty.set(false);
+    saveStatus.set("saved");
+  }
   recentFiles.update((recent) => {
     const filtered = recent.filter((f) => f !== path);
     return [path, ...filtered].slice(0, 20);
